@@ -1,0 +1,56 @@
+# Maintainer: Kirill <kirill@example.com>
+pkgname=void-launcher
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Minecraft launcher with Void Link P2P co-op"
+arch=('any')
+url="https://github.com/yourusername/void-launcher"
+license=('MIT')
+depends=(
+    'python'
+    'pyside6'
+    'python-requests'
+    'python-cryptography'
+    'bubblewrap'
+    'java-runtime'
+)
+optdepends=(
+    'nvidia-prime: для запуска на NVIDIA GPU'
+    'nvidia-utils: драйверы NVIDIA'
+)
+source=("void-launcher-${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    cd "$srcdir"
+
+    # Создаём директорию для установки
+    install -d "$pkgdir/opt/$pkgname"
+
+    # Копируем файлы из распакованного архива
+    cp -r main.py core "$pkgdir/opt/$pkgname/"
+
+    # Создаём launcher script
+    install -Dm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<EOF
+#!/bin/bash
+exec python /opt/$pkgname/main.py "\$@"
+EOF
+
+    # Создаём desktop entry
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/$pkgname.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Void Launcher
+Comment=Minecraft launcher with P2P co-op
+Exec=$pkgname
+Icon=applications-games
+Categories=Game;
+Terminal=false
+EOF
+
+    # Создаём symlink для prime-run
+    install -Dm755 /dev/stdin "$pkgdir/usr/bin/${pkgname}-nvidia" <<EOF
+#!/bin/bash
+exec prime-run python /opt/$pkgname/main.py "\$@"
+EOF
+}
